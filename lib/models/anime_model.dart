@@ -7,7 +7,7 @@ class Anime {
   AnimeStatus status;
   List<String> genres;
   bool isFavorite;
-  int season;
+  int? season;
   int? totalEpisodes; // how many episode released so far
   String? notificationDay; //monday to sunday
   String? description; //optional descrition about the anime
@@ -21,7 +21,7 @@ class Anime {
     required this.status,
     this.genres = const [],
     this.isFavorite = false,
-    this.season = 1,
+    this.season,
     this.totalEpisodes,
     this.notificationDay,
     this.description,
