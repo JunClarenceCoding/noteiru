@@ -5,9 +5,12 @@ import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'package:noteiru/models/anime_model.dart';
 import 'package:noteiru/core/services/database_helper.dart';
+import 'package:noteiru/models/episode_model.dart';
 
 class AnimeFormScreen extends StatefulWidget {
-  const AnimeFormScreen({super.key});
+  final Anime? existingAnime; // null = adding new, non-null = editing
+
+  const AnimeFormScreen({super.key, this.existingAnime});
 
   @override
   State<AnimeFormScreen> createState() => _AnimeFormScreenState();
@@ -16,7 +19,7 @@ class AnimeFormScreen extends StatefulWidget {
 class _AnimeFormScreenState extends State<AnimeFormScreen> {
   final _titleEnglishController = TextEditingController();
   final _titleRomajiController = TextEditingController();
-  final _seasonController = TextEditingController(text: '1');
+  final _seasonController = TextEditingController();
   final _totalEpisodesController = TextEditingController();
   final _descriptionController = TextEditingController();
 
@@ -49,6 +52,25 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
   static const _textMuted = Color(0xFF5F5E5A);
   static const _statusColor = Color(0xFF5DCAA5);
   static const _favoriteColor = Color(0xFFEF9F27);
+
+  @override
+  void initState() {
+    super.initState();
+    final anime = widget.existingAnime;
+    if (anime != null) {
+      _titleEnglishController.text = anime.titleEnglish ?? '';
+      _titleRomajiController.text = anime.titleRomaji ?? '';
+      _seasonController.text = anime.season?.toString() ?? '1';
+      _totalEpisodesController.text = anime.totalEpisodes?.toString() ?? '';
+      _descriptionController.text = anime.description ?? '';
+      _type = anime.type;
+      _status = anime.status;
+      _notificationDay = anime.notificationDay;
+      _isFavorite = anime.isFavorite;
+      _imagePath = anime.imagePath;
+      _selectedGenres = List<String>.from(anime.genres);
+    }
+  }
 
   @override
   void dispose() {
@@ -254,7 +276,10 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
   Future<void> _saveAnime() async {
     if (!_validateAndSave()) return;
 
+    final isEditing = widget.existingAnime != null;
+
     final anime = Anime(
+      id: isEditing ? widget.existingAnime!.id : null,
       titleEnglish: _titleEnglishController.text.trim().isEmpty
           ? null
           : _titleEnglishController.text.trim(),
@@ -278,10 +303,29 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
           : _descriptionController.text.trim(),
     );
 
-    final newId = await DatabaseHelper.instance.insertAnime(anime);
+    if (isEditing) {
+      await DatabaseHelper.instance.updateAnime(anime);
 
-    if (anime.totalEpisodes != null && anime.totalEpisodes! > 0) {
-      await DatabaseHelper.instance.generateEpisodesForAnime(newId, anime.totalEpisodes!);
+      // If totalEpisodes increased, generate the newly added episode rows
+      if (anime.totalEpisodes != null) {
+        final existingEpisodes = await DatabaseHelper.instance.getEpisodesForAnime(anime.id!);
+        final currentMax = existingEpisodes.isEmpty
+            ? 0
+            : existingEpisodes.map((e) => e.episodeNumber).reduce((a, b) => a > b ? a : b);
+
+        if (anime.totalEpisodes! > currentMax) {
+          for (int i = currentMax + 1; i <= anime.totalEpisodes!; i++) {
+            await DatabaseHelper.instance.insertEpisode(
+              Episode(animeId: anime.id!, episodeNumber: i),
+            );
+          }
+        }
+      }
+    } else {
+      final newId = await DatabaseHelper.instance.insertAnime(anime);
+      if (anime.totalEpisodes != null && anime.totalEpisodes! > 0) {
+        await DatabaseHelper.instance.generateEpisodesForAnime(newId, anime.totalEpisodes!);
+      }
     }
 
     if (mounted) Navigator.pop(context, true);
@@ -381,7 +425,10 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
                     onTap: () => Navigator.pop(context),
                     child: const Icon(Icons.close, color: _textPrimary, size: 20),
                   ),
-                  Text('New entry', style: TextStyle(fontFamily: 'PTSerif', fontSize: 15, color: _textPrimary)),
+                  Text(
+                    widget.existingAnime != null ? 'Edit entry' : 'New entry',
+                    style: TextStyle(fontFamily: 'PTSerif', fontSize: 15, color: _textPrimary),
+                  ),
                   GestureDetector(
                     onTap: _saveAnime,
                     child: Text('Save', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: _accentColor)),

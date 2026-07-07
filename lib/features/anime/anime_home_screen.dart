@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:noteiru/features/anime/anime_form_popup.dart';
+import 'package:noteiru/features/anime/anime_form_screen.dart';
 import '../../core/services/database_helper.dart';
 import '../../models/anime_model.dart';
 import 'widgets/anime_carousel.dart';

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:noteiru/models/anime_model.dart';
 import 'package:noteiru/models/episode_model.dart';
 import 'package:noteiru/core/services/database_helper.dart';
+import 'package:noteiru/features/anime/anime_form_screen.dart';
 
 class AnimeDetailScreen extends StatefulWidget {
   final int animeId;
@@ -238,8 +239,12 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
                   Row(
                     children: [
                       GestureDetector(
-                        onTap: () {
-                          // navigate to edit form, passing existing anime, later
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => AnimeFormScreen(existingAnime: anime)),
+                          );
+                          if (result == true) _loadData(); // refresh detail screen with updated info
                         },
                         child: const Icon(Icons.edit_outlined, color: _textSecondary, size: 18),
                       ),
