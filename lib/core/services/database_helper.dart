@@ -146,7 +146,7 @@ class DatabaseHelper {
             'episodes',
             where: 'animeId = ?',
             whereArgs: [animeId],
-            orderBy: 'episodeNumbe ASC',
+            orderBy: 'episodeNumber ASC',
         );
         return maps.map((map) => Episode.fromMap(map)).toList();
     }

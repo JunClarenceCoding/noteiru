@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:noteiru/features/anime/anime_form_popup.dart';
 import '../../core/services/database_helper.dart';
 import '../../models/anime_model.dart';
 import 'widgets/anime_carousel.dart';
@@ -53,8 +54,14 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFFB84E22),
-        onPressed: () {
-          // navigate to add-anime form later
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AnimeFormScreen()),
+          );
+          if (result == true) {
+            _loadAnimeData();
+          }
         },
         child: const Icon(Icons.add, color: Color(0xFF2E1005)),
       ),
@@ -68,12 +75,12 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Transform.translate(
-  offset: const Offset(0, -3), // negative = moves up, adjust value as needed
-  child: Image.asset(
-    'assets/images/noteiru_logo_transparent.png',
-    height: 35,
-  ),
-),
+            offset: const Offset(0, -3), // negative = moves up, adjust value as needed
+            child: Image.asset(
+              'assets/images/noteiru_logo_transparent.png',
+              height: 35,
+            ),
+          ),
           Row(
             children: [
               IconButton(
