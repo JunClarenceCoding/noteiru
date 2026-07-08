@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:noteiru/models/anime_model.dart';
-import 'package:noteiru/features/anime/anime_detail_screen.dart';
 
 class AnimeCard extends StatelessWidget {
   final Anime anime;
@@ -22,15 +21,7 @@ class AnimeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => AnimeDetailScreen(animeId: anime.id!)),
-  );
-  if (result == true) {
-    // anime was deleted or changed — trigger a reload on the home screen
-  }
-},
+      onTap: onTap, // just use the parameter — no navigation logic in here
       child: SizedBox(
         width: 104,
         child: Column(

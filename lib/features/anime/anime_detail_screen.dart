@@ -49,25 +49,21 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
   int get _watchedCount => _episodes.where((e) => e.isWatched).length;
 
   Future<void> _toggleEpisode(Episode episode) async {
-    if (!episode.isWatched) {
-      // Marking watched: cascade — mark this one and everything before it too
-      await DatabaseHelper.instance.markEpisodesWatchedUpTo(
-        widget.animeId,
-        episode.episodeNumber,
-      );
-    } else {
-      // Unmarking: just this single episode goes back to unwatched
-      final updated = Episode(
-        id: episode.id,
-        animeId: episode.animeId,
-        episodeNumber: episode.episodeNumber,
-        isWatched: false,
-        note: episode.note,
-      );
-      await DatabaseHelper.instance.updateEpisode(updated);
-    }
-    _loadData();
+  if (!episode.isWatched) {
+    // Marking watched: cascade forward — mark this one and everything before it too
+    await DatabaseHelper.instance.markEpisodesWatchedUpTo(
+      widget.animeId,
+      episode.episodeNumber,
+    );
+  } else {
+    // Unmarking: cascade backward — unmark this one and everything after it too
+    await DatabaseHelper.instance.markEpisodesUnwatchedFrom(
+      widget.animeId,
+      episode.episodeNumber,
+    );
   }
+  _loadData();
+}
 
   Future<void> _openMarkUpToDialog() async {
     final controller = TextEditingController();

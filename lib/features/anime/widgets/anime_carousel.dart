@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:noteiru/models/anime_model.dart';
 import 'anime_card.dart';
+import 'package:noteiru/features/anime/anime_detail_screen.dart';
+import 'package:noteiru/core/services/database_helper.dart';
 
 
 class AnimeCarousel extends StatelessWidget {
@@ -9,6 +11,7 @@ class AnimeCarousel extends StatelessWidget {
   final Color iconColor;
   final List<Anime> animeList;
   final VoidCallback onViewAll;
+  final VoidCallback? onAnimeChanged;
   final String Function(Anime)? badgeTextBuilder;
   final Color badgeColor;
 
@@ -19,6 +22,7 @@ class AnimeCarousel extends StatelessWidget {
     required this.iconColor,
     required this.animeList,
     required this.onViewAll,
+    this.onAnimeChanged,
     this.badgeTextBuilder,
     this.badgeColor = const Color(0xFF5DCAA5),
   });
@@ -69,16 +73,40 @@ class AnimeCarousel extends StatelessWidget {
             itemCount: animeList.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10,),
             itemBuilder: (context, index) {
-              final anime = animeList[index];
-              return AnimeCard(
-                anime: anime,
-                badgeText: badgeTextBuilder?.call(anime),
-                badgeColor: badgeColor,
-                onFavoriteToggle: (){
-                  // toggle favorite + update database, wired up later
-                },
-              );
-            },
+  final anime = animeList[index];
+  return AnimeCard(
+    anime: anime,
+    badgeText: badgeTextBuilder?.call(anime),
+    badgeColor: badgeColor,
+    onTap: () async {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AnimeDetailScreen(animeId: anime.id!)),
+      );
+      if (result == true && onAnimeChanged != null) {
+        onAnimeChanged!();
+      }
+    },
+    onFavoriteToggle: () async {
+      final updated = Anime(
+        id: anime.id,
+        titleEnglish: anime.titleEnglish,
+        titleRomaji: anime.titleRomaji,
+        imagePath: anime.imagePath,
+        type: anime.type,
+        status: anime.status,
+        genres: anime.genres,
+        isFavorite: !anime.isFavorite, // flip it
+        season: anime.season,
+        totalEpisodes: anime.totalEpisodes,
+        notificationDay: anime.notificationDay,
+        description: anime.description,
+      );
+      await DatabaseHelper.instance.updateAnime(updated);
+      onAnimeChanged?.call(); // refresh the home screen
+    },
+  );
+},
           ),
         ),
         const SizedBox(height: 20,),

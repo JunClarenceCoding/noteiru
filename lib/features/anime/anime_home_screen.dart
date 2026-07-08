@@ -3,6 +3,8 @@ import 'package:noteiru/features/anime/anime_form_screen.dart';
 import '../../core/services/database_helper.dart';
 import '../../models/anime_model.dart';
 import 'widgets/anime_carousel.dart';
+import 'anime_view_all_screen.dart';
+import 'package:noteiru/features/search/search_screen.dart';
 
 class AnimeHomeScreen extends StatefulWidget {
   const AnimeHomeScreen({super.key});
@@ -84,11 +86,13 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen> {
           Row(
             children: [
               IconButton(
-                
                 icon: const Icon(Icons.search, color: Color(0xFFC0BCB6), size: 25),
                 onPressed: () {
-                  // navigate to search screen later
-                },
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                );
+              },
               ),
               IconButton(
                 icon: const Icon(Icons.tune, color: Color(0xFFC0BCB6), size: 25),
@@ -133,28 +137,44 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen> {
           icon: Icons.star,
           iconColor: const Color(0xFFEF9F27),
           animeList: _favorites,
-          onViewAll: () {},
+          onViewAll: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AnimeViewAllScreen(category: AnimeCategory.favorites)),
+          ).then((_) => _loadAnimeData()), // refresh home in case something changed
+          onAnimeChanged: _loadAnimeData,
         ),
         AnimeCarousel(
           title: 'Currently watching',
           icon: Icons.play_arrow,
           iconColor: const Color(0xFF5DCAA5),
           animeList: _currentlyWatching,
-          onViewAll: () {},
+          onViewAll: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AnimeViewAllScreen(category: AnimeCategory.currentlyWatching)),
+          ).then((_) => _loadAnimeData()), // refresh home in case something changed
+          onAnimeChanged: _loadAnimeData,
         ),
         AnimeCarousel(
           title: 'Finished watching',
           icon: Icons.check_circle,
           iconColor: const Color(0xFF7F77DD),
           animeList: _finishedWatching,
-          onViewAll: () {},
+          onViewAll: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AnimeViewAllScreen(category: AnimeCategory.finishedWatching)),
+          ).then((_) => _loadAnimeData()), // refresh home in case something changed
+          onAnimeChanged: _loadAnimeData,
         ),
         AnimeCarousel(
           title: 'Movies',
           icon: Icons.movie,
           iconColor: const Color(0xFFD4537E),
           animeList: _movies,
-          onViewAll: () {},
+          onViewAll: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AnimeViewAllScreen(category: AnimeCategory.movies)),
+          ).then((_) => _loadAnimeData()), // refresh home in case something changed
+          onAnimeChanged: _loadAnimeData,
         ),
       ],
     );

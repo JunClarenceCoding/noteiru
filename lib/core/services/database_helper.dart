@@ -162,6 +162,17 @@ class DatabaseHelper {
     );
   }
 
+  // Mark this episode and everything after it as unwatched
+  Future<void> markEpisodesUnwatchedFrom(int animeId, int episodeNumber) async {
+    final db = await database;
+    await db.update(
+      'episodes',
+      {'isWatched': 0},
+      where: 'animeId = ? AND episodeNumber >= ?',
+      whereArgs: [animeId, episodeNumber],
+    );
+  }
+
   // Add many blank episodes at once, e.g. when totalEpisodes is set/changed
   Future<void> generateEpisodesForAnime(int animeId, int totalEpisodes) async {
     final db = await database;
