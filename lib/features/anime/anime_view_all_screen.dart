@@ -4,12 +4,13 @@ import 'package:noteiru/core/services/database_helper.dart';
 import 'anime_detail_screen.dart';
 import 'widgets/anime_card.dart';
 
-enum AnimeCategory { favorites, currentlyWatching, finishedWatching, movies }
+enum AnimeCategory { favorites, currentlyWatching, series, movies, finishedWatching }
 
 class AnimeViewAllScreen extends StatefulWidget {
   final AnimeCategory category;
+  final List<String> genreFilters;
 
-  const AnimeViewAllScreen({super.key, required this.category});
+  const AnimeViewAllScreen({super.key, required this.category, this.genreFilters = const [],});
 
   @override
   State<AnimeViewAllScreen> createState() => _AnimeViewAllScreenState();
@@ -38,18 +39,24 @@ class _AnimeViewAllScreenState extends State<AnimeViewAllScreen> {
         filtered = allAnime.where((a) => a.isFavorite).toList();
         break;
       case AnimeCategory.currentlyWatching:
-        filtered = allAnime
-            .where((a) => a.status == AnimeStatus.currentlyWatching && a.type == AnimeType.series)
-            .toList();
+        filtered = allAnime.where((a) => a.status == AnimeStatus.currentlyWatching).toList();
         break;
-      case AnimeCategory.finishedWatching:
-        filtered = allAnime
-            .where((a) => a.status == AnimeStatus.finishedWatching && a.type == AnimeType.series)
-            .toList();
+      case AnimeCategory.series:
+        filtered = allAnime.where((a) => a.type == AnimeType.series).toList();
         break;
       case AnimeCategory.movies:
         filtered = allAnime.where((a) => a.type == AnimeType.movie).toList();
         break;
+      case AnimeCategory.finishedWatching:
+        filtered = allAnime.where((a) => a.status == AnimeStatus.finishedWatching).toList();
+        break;
+    }
+
+    // Apply genre filter on top of the category filter, if any genres are selected
+    if (widget.genreFilters.isNotEmpty) {
+      filtered = filtered.where((anime) {
+        return anime.genres.any((g) => widget.genreFilters.contains(g));
+      }).toList();
     }
 
     setState(() {
@@ -64,10 +71,12 @@ class _AnimeViewAllScreenState extends State<AnimeViewAllScreen> {
         return 'Favorites';
       case AnimeCategory.currentlyWatching:
         return 'Currently watching';
-      case AnimeCategory.finishedWatching:
-        return 'Finished watching';
+      case AnimeCategory.series:
+        return 'Series';
       case AnimeCategory.movies:
         return 'Movies';
+      case AnimeCategory.finishedWatching:
+        return 'Finished watching';
     }
   }
 
@@ -118,7 +127,9 @@ class _AnimeViewAllScreenState extends State<AnimeViewAllScreen> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '${_animeList.length} anime',
+                  widget.genreFilters.isEmpty
+                      ? '${_animeList.length} anime'
+                      : '${_animeList.length} anime · ${widget.genreFilters.join(", ")}',
                   style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: _textMuted),
                 ),
               ),

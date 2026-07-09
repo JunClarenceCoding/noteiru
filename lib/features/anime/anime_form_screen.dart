@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:noteiru/models/anime_model.dart';
 import 'package:noteiru/core/services/database_helper.dart';
 import 'package:noteiru/models/episode_model.dart';
+import 'package:noteiru/core/services/notification_helper.dart';
 
 class AnimeFormScreen extends StatefulWidget {
   final Anime? existingAnime; // null = adding new, non-null = editing
@@ -303,11 +304,14 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
           : _descriptionController.text.trim(),
     );
 
+    int animeId;
+
     if (isEditing) {
       await DatabaseHelper.instance.updateAnime(anime);
+      animeId = anime.id!;
 
-      // If totalEpisodes increased, generate the newly added episode rows
-      if (anime.totalEpisodes != null) {
+      if (anime.type == AnimeType.series && anime.totalEpisodes != null) {
+        // If totalEpisodes increased, generate the newly added episode rows
         final existingEpisodes = await DatabaseHelper.instance.getEpisodesForAnime(anime.id!);
         final currentMax = existingEpisodes.isEmpty
             ? 0
@@ -320,12 +324,36 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
             );
           }
         }
+      } else if (anime.type == AnimeType.movie) {
+        // Movies get exactly one "episode" row to hold the note/watched state
+        final existing = await DatabaseHelper.instance.getEpisodesForAnime(anime.id!);
+        if (existing.isEmpty) {
+          await DatabaseHelper.instance.insertEpisode(
+            Episode(animeId: anime.id!, episodeNumber: 1),
+          );
+        }
       }
     } else {
-      final newId = await DatabaseHelper.instance.insertAnime(anime);
-      if (anime.totalEpisodes != null && anime.totalEpisodes! > 0) {
-        await DatabaseHelper.instance.generateEpisodesForAnime(newId, anime.totalEpisodes!);
+      animeId = await DatabaseHelper.instance.insertAnime(anime);
+
+      if (anime.type == AnimeType.series && anime.totalEpisodes != null && anime.totalEpisodes! > 0) {
+        await DatabaseHelper.instance.generateEpisodesForAnime(animeId, anime.totalEpisodes!);
+      } else if (anime.type == AnimeType.movie) {
+        await DatabaseHelper.instance.insertEpisode(
+          Episode(animeId: animeId, episodeNumber: 1),
+        );
       }
+    }
+
+    // Schedule or cancel the notification based on the current form state
+    if (anime.notificationDay != null) {
+      await NotificationHelper.scheduleWeeklyReminder(
+        animeId: animeId,
+        animeTitle: anime.displayTitle,
+        weekday: anime.notificationDay!,
+      );
+    } else {
+      await NotificationHelper.cancelReminder(animeId);
     }
 
     if (mounted) Navigator.pop(context, true);
@@ -713,7 +741,7 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
                           ),
                           Switch(
                             value: _isFavorite,
-                            activeColor: _accentColor,
+                            activeThumbColor: _accentColor,
                             onChanged: (value) => setState(() => _isFavorite = value),
                           ),
                         ],

@@ -42,8 +42,12 @@ class AnimeCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                           child: Image.file(File(anime.imagePath!), fit: BoxFit.cover),
                         )
-                      : const Center(
-                          child: Icon(Icons.image_outlined, color: Color(0xFF5F5E5A), size: 24),
+                      : Center(
+                          child: Image.asset(
+                            'assets/images/noteiru_n_mark.png',
+                            width: 40,
+                            opacity: const AlwaysStoppedAnimation(0.5),
+                          ),
                         ),
                 ),
                 if (badgeText != null)

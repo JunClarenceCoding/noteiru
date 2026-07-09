@@ -14,6 +14,7 @@ class AnimeCarousel extends StatelessWidget {
   final VoidCallback? onAnimeChanged;
   final String Function(Anime)? badgeTextBuilder;
   final Color badgeColor;
+  final int maxDisplayCount;
 
   const AnimeCarousel({
     super.key,
@@ -25,11 +26,16 @@ class AnimeCarousel extends StatelessWidget {
     this.onAnimeChanged,
     this.badgeTextBuilder,
     this.badgeColor = const Color(0xFF5DCAA5),
+    this.maxDisplayCount = 6,
   });
 
   @override
   Widget build(BuildContext context) {
     if (animeList.isEmpty) return const SizedBox.shrink();
+
+    final displayList = animeList.length > maxDisplayCount
+        ? animeList.sublist(0, maxDisplayCount)
+        : animeList;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,6 +58,13 @@ class AnimeCarousel extends StatelessWidget {
                       color: Color(0xFFECD4C0),
                     ),
                   ),
+                  if (animeList.length > maxDisplayCount) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '(${animeList.length})',
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF706C66)),
+                    ),
+                  ],
                 ],
               ),
               GestureDetector(
@@ -70,43 +83,43 @@ class AnimeCarousel extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: animeList.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10,),
+            itemCount: displayList.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 10,),
             itemBuilder: (context, index) {
-  final anime = animeList[index];
-  return AnimeCard(
-    anime: anime,
-    badgeText: badgeTextBuilder?.call(anime),
-    badgeColor: badgeColor,
-    onTap: () async {
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => AnimeDetailScreen(animeId: anime.id!)),
-      );
-      if (result == true && onAnimeChanged != null) {
-        onAnimeChanged!();
-      }
-    },
-    onFavoriteToggle: () async {
-      final updated = Anime(
-        id: anime.id,
-        titleEnglish: anime.titleEnglish,
-        titleRomaji: anime.titleRomaji,
-        imagePath: anime.imagePath,
-        type: anime.type,
-        status: anime.status,
-        genres: anime.genres,
-        isFavorite: !anime.isFavorite, // flip it
-        season: anime.season,
-        totalEpisodes: anime.totalEpisodes,
-        notificationDay: anime.notificationDay,
-        description: anime.description,
-      );
-      await DatabaseHelper.instance.updateAnime(updated);
-      onAnimeChanged?.call(); // refresh the home screen
-    },
-  );
-},
+              final anime = displayList[index];
+              return AnimeCard(
+                anime: anime,
+                badgeText: badgeTextBuilder?.call(anime),
+                badgeColor: badgeColor,
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => AnimeDetailScreen(animeId: anime.id!)),
+                  );
+                  if (result == true && onAnimeChanged != null) {
+                    onAnimeChanged!();
+                  }
+                },
+                onFavoriteToggle: () async {
+                  final updated = Anime(
+                    id: anime.id,
+                    titleEnglish: anime.titleEnglish,
+                    titleRomaji: anime.titleRomaji,
+                    imagePath: anime.imagePath,
+                    type: anime.type,
+                    status: anime.status,
+                    genres: anime.genres,
+                    isFavorite: !anime.isFavorite, // flip it
+                    season: anime.season,
+                    totalEpisodes: anime.totalEpisodes,
+                    notificationDay: anime.notificationDay,
+                    description: anime.description,
+                  );
+                  await DatabaseHelper.instance.updateAnime(updated);
+                  onAnimeChanged?.call(); // refresh the home screen
+                },
+              );
+            },
           ),
         ),
         const SizedBox(height: 20,),
