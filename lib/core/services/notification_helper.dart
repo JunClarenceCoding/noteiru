@@ -18,10 +18,14 @@ class NotificationHelper {
 
     await _plugin.initialize(initSettings);
 
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
     // Request notification permission (Android 13+)
-    await _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+    await androidPlugin?.requestNotificationsPermission();
+
+    // Request exact alarm permission (Android 12+) — needed for scheduled weekly reminders
+    await androidPlugin?.requestExactAlarmsPermission();
   }
 
   // Schedules a weekly repeating notification for a given anime

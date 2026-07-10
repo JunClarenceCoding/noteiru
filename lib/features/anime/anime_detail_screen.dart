@@ -195,6 +195,18 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
     );
 
     await DatabaseHelper.instance.updateAnime(updated);
+
+    // Stop notifications once marked finished; resume if switched back to watching
+    if (newStatus == AnimeStatus.finishedWatching) {
+      await NotificationHelper.cancelReminder(anime.id!);
+    } else if (anime.notificationDay != null) {
+      await NotificationHelper.scheduleWeeklyReminder(
+        animeId: anime.id!,
+        animeTitle: anime.displayTitle,
+        weekday: anime.notificationDay!,
+      );
+    }
+
     _loadData();
   }
 

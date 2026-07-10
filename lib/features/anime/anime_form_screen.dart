@@ -456,14 +456,19 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
     }
 
     // Schedule or cancel the notification based on the current form state
-    if (anime.notificationDay != null) {
-      await NotificationHelper.scheduleWeeklyReminder(
-        animeId: animeId,
-        animeTitle: anime.displayTitle,
-        weekday: anime.notificationDay!,
-      );
-    } else {
-      await NotificationHelper.cancelReminder(animeId);
+    try {
+      if (anime.notificationDay != null) {
+        await NotificationHelper.scheduleWeeklyReminder(
+          animeId: animeId,
+          animeTitle: anime.displayTitle,
+          weekday: anime.notificationDay!,
+        );
+      } else {
+        await NotificationHelper.cancelReminder(animeId);
+      }
+    } catch (e) {
+      debugPrint('Notification scheduling failed: $e');
+      // Don't let a notification failure block saving the anime
     }
 
     if (mounted) Navigator.pop(context, true);
