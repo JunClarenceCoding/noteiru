@@ -22,9 +22,14 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen> {
   List<String> _tempGenreFilters = [];
 
   static const List<String> _genreOptions = [
-    'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy',
-    'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life',
-    'Sports', 'Supernatural', 'Thriller',
+    'Action', 'Adventure', 'Boys Love', 'Cars', 'Comedy', 'Dementia',
+    'Demons', 'Drama', 'Ecchi', 'Erotica', 'Fantasy', 'Game',
+    'Girls Love', 'Gourmet', 'Harem', 'Historical', 'Horror', 'Isekai',
+    'Josei', 'Kids', 'Magic', 'Mahou Shoujo', 'Martial Arts', 'Mecha',
+    'Military', 'Music', 'Mystery', 'Parody', 'Police', 'Psychological',
+    'Romance', 'Samurai', 'School', 'Sci-Fi', 'Seinen', 'Shoujo',
+    'Shoujo Ai', 'Shounen', 'Shounen Ai', 'Slice of Life', 'Space', 'Sports',
+    'Super Power', 'Supernatural', 'Suspense', 'Thriller', 'Vampire',
   ];
 
   @override
@@ -394,6 +399,39 @@ class _AnimeHomeScreenState extends State<AnimeHomeScreen> {
   }
 
   Widget _buildAnimeList() {
+
+    if (_filteredAnime.isEmpty) {
+    return ListView(
+      children: [
+        _buildHeader(),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.5,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.filter_alt_off_outlined, size: 32, color: const Color(0xFF3E3C34)),
+                const SizedBox(height: 10),
+                Text(
+                  'No anime match this filter',
+                  style: TextStyle(fontFamily: 'PTSerif', fontSize: 14, color: const Color(0xFFC0BCB6)),
+                ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () => setState(() => _selectedGenreFilters = []),
+                  child: Text(
+                    'Clear filter',
+                    style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: const Color(0xFFB84E22)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   return ListView(
     children: [
       _buildHeader(),

@@ -31,11 +31,17 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
   String? _imagePath;
   List<String> _selectedGenres = [];
   String? _titleError;
+  List<String> _tempGenreSelection = [];
 
   static const List<String> _genreOptions = [
-    'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy',
-    'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life',
-    'Sports', 'Supernatural', 'Thriller',
+    'Action', 'Adventure', 'Boys Love', 'Cars', 'Comedy', 'Dementia',
+    'Demons', 'Drama', 'Ecchi', 'Erotica', 'Fantasy', 'Game',
+    'Girls Love', 'Gourmet', 'Harem', 'Historical', 'Horror', 'Isekai',
+    'Josei', 'Kids', 'Magic', 'Mahou Shoujo', 'Martial Arts', 'Mecha',
+    'Military', 'Music', 'Mystery', 'Parody', 'Police', 'Psychological',
+    'Romance', 'Samurai', 'School', 'Sci-Fi', 'Seinen', 'Shoujo',
+    'Shoujo Ai', 'Shounen', 'Shounen Ai', 'Slice of Life', 'Space', 'Sports',
+    'Super Power', 'Supernatural', 'Suspense', 'Thriller', 'Vampire',
   ];
 
   static const List<String> _weekdays = [
@@ -97,63 +103,130 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
   }
 
   Future<void> _openGenrePicker() async {
+    _tempGenreSelection = List.from(_selectedGenres); // initialize once, before opening
+    final searchController = TextEditingController();
+    List<String> visibleGenres = List.from(_genreOptions);
+
     final result = await showModalBottomSheet<List<String>>(
       context: context,
       backgroundColor: _cardColor,
+      isScrollControlled: true,
       builder: (context) {
-        final tempSelected = List<String>.from(_selectedGenres);
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Select genres',
-                      style: TextStyle(
-                        fontFamily: 'PTSerif',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: _textPrimary,
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Select genres',
+                            style: TextStyle(fontFamily: 'PTSerif', fontWeight: FontWeight.bold, fontSize: 16, color: _textPrimary),
+                          ),
+                          if (_tempGenreSelection.isNotEmpty)
+                            Text(
+                              '${_tempGenreSelection.length} selected',
+                              style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: _textMuted),
+                            ),
+                        ],
                       ),
                     ),
-                  ),
-                  Flexible(
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: _genreOptions.map((genre) {
-                        final isChecked = tempSelected.contains(genre);
-                        return CheckboxListTile(
-                          title:  Text(genre, style: TextStyle(color: _textPrimary),),
-                          value: isChecked,
-                          activeColor: _accentColor,
-                          onChanged: (checked) {
-                            setModalState(() {
-                              if (checked == true) {
-                                tempSelected.add(genre);
-                              } else {
-                                tempSelected.remove(genre);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: _accentColor),
-                        onPressed: () => Navigator.pop(context, tempSelected),
-                        child: Text('Done', style: TextStyle(color: _accentOnColor)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: _bgColor,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: _borderColor),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.search, size: 16, color: _textMuted),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: TextField(
+                                controller: searchController,
+                                style: TextStyle(color: _textPrimary, fontFamily: 'Inter', fontSize: 13),
+                                decoration: InputDecoration(
+                                  hintText: 'Search genres',
+                                  hintStyle: TextStyle(color: _textMuted, fontFamily: 'Inter', fontSize: 13),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                                ),
+                                onChanged: (query) {
+                                  setModalState(() {
+                                    visibleGenres = _genreOptions
+                                        .where((g) => g.toLowerCase().contains(query.toLowerCase()))
+                                        .toList();
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: visibleGenres.map((genre) {
+                            final isSelected = _tempGenreSelection.contains(genre);
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  if (isSelected) {
+                                    _tempGenreSelection.remove(genre);
+                                  } else {
+                                    _tempGenreSelection.add(genre);
+                                  }
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? _accentColor : _bgColor,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: isSelected ? _accentColor : _borderColor),
+                                ),
+                                child: Text(
+                                  genre,
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 12,
+                                    color: isSelected ? _accentOnColor : _textSecondary,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: _accentColor),
+                          onPressed: () => Navigator.pop(context, _tempGenreSelection),
+                          child: Text('Done', style: TextStyle(color: _accentOnColor)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -322,6 +395,43 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
             await DatabaseHelper.instance.insertEpisode(
               Episode(animeId: anime.id!, episodeNumber: i),
             );
+          }
+        } else if (anime.totalEpisodes! < currentMax) {
+          // Total went down — trim episodes above the new number
+          final toRemove = existingEpisodes.where((e) => e.episodeNumber > anime.totalEpisodes!).toList();
+          final hasDataToLose = toRemove.any((e) => e.isWatched || e.note != null);
+
+          bool proceed = true;
+          if (hasDataToLose && mounted) {
+            proceed = await showDialog<bool>(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  backgroundColor: _cardColor,
+                  title: Text('Remove ${toRemove.length} episodes?', style: TextStyle(color: _textPrimary, fontFamily: 'PTSerif')),
+                  content: Text(
+                    'Some of these episodes have notes or watched progress that will be permanently lost.',
+                    style: TextStyle(color: _textSecondary, fontFamily: 'Inter', fontSize: 13),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('Cancel', style: TextStyle(color: _textMuted)),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Remove', style: TextStyle(color: Colors.redAccent)),
+                    ),
+                  ],
+                );
+              },
+            ) ?? false;
+          }
+
+          if (proceed) {
+            for (final episode in toRemove) {
+              await DatabaseHelper.instance.deleteEpisode(episode.id!);
+            }
           }
         }
       } else if (anime.type == AnimeType.movie) {
@@ -732,9 +842,13 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
+                          Row (
                             children: [
-                              Icon(Icons.star, size: 16, color: _favoriteColor),
+                              Icon(
+                                _isFavorite ? Icons.favorite : Icons.favorite_border,
+                                size: 16,
+                                color: _isFavorite ? const Color(0xFFD4537E) : _textMuted,
+                              ),
                               const SizedBox(width: 6),
                               Text('Add to favorites', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: _textPrimary)),
                             ],

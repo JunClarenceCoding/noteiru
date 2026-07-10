@@ -26,7 +26,7 @@ class AnimeCarousel extends StatelessWidget {
     this.onAnimeChanged,
     this.badgeTextBuilder,
     this.badgeColor = const Color(0xFF5DCAA5),
-    this.maxDisplayCount = 6,
+    this.maxDisplayCount = 8,
   });
 
   @override

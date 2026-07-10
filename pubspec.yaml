@@ -55,6 +55,15 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.3
+
+flutter_native_splash:
+  color: "#15140F"
+  image: assets/images/noteiru_logo_transparent.png
+  android_12:
+    color: "#15140F"
+    image: assets/images/noteiru_logo_android12_safe.png
+    icon_background_color: "#15140F"
 
 flutter_launcher_icons:
   android: true
