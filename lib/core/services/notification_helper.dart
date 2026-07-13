@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class NotificationHelper {
   static final _plugin = FlutterLocalNotificationsPlugin();
@@ -13,6 +15,9 @@ class NotificationHelper {
   static Future<void> init() async {
     tz_data.initializeTimeZones();
 
+    final String currentTimeZone = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(currentTimeZone));
+
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidSettings);
 
@@ -21,49 +26,58 @@ class NotificationHelper {
     final androidPlugin = _plugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
-    // Request notification permission (Android 13+)
     await androidPlugin?.requestNotificationsPermission();
-
-    // Request exact alarm permission (Android 12+) — needed for scheduled weekly reminders
     await androidPlugin?.requestExactAlarmsPermission();
   }
 
-  // Schedules a weekly repeating notification for a given anime
   static Future<void> scheduleWeeklyReminder({
     required int animeId,
     required String animeTitle,
-    required String weekday, // "Monday".."Sunday"
+    required String weekday,
+    String? time, // "HH:mm" format, defaults to 08:00 if null
   }) async {
     final targetWeekday = _weekdayMap[weekday];
     if (targetWeekday == null) return;
 
+    int hour = 8;
+    int minute = 0;
+    if (time != null) {
+      final parts = time.split(':');
+      hour = int.tryParse(parts[0]) ?? 8;
+      minute = int.tryParse(parts[1]) ?? 0;
+    }
+
     final now = tz.TZDateTime.now(tz.local);
     var scheduledDate = tz.TZDateTime(
-      tz.local, now.year, now.month, now.day, 18, 0, // 6:00 PM on the chosen day
+      tz.local, now.year, now.month, now.day, hour, minute,
     );
 
     while (scheduledDate.weekday != targetWeekday || scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    await _plugin.zonedSchedule(
-      animeId,
-      'New episode reminder',
-      'It might be time for a new episode of $animeTitle!',
-      scheduledDate,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'anime_reminders',
-          'Anime reminders',
-          channelDescription: 'Weekly reminders for anime release days',
-          importance: Importance.defaultImportance,
+    try {
+      await _plugin.zonedSchedule(
+        animeId,
+        'New episode reminder',
+        'It might be time for a new episode of $animeTitle!',
+        scheduledDate,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'anime_reminders',
+            'Anime reminders',
+            channelDescription: 'Weekly reminders for anime release days',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
         ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-    );
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e, stack) {
+      debugPrint('Failed to schedule notification: $e');
+      debugPrint('$stack');
+    }
   }
 
   static Future<void> cancelReminder(int animeId) async {

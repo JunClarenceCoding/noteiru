@@ -11,6 +11,7 @@ class Anime {
   int? totalEpisodes; // how many episode released so far
   String? notificationDay; //monday to sunday
   String? description; //optional descrition about the anime
+  String? notificationTime;
 
   Anime({
     this.id,
@@ -25,6 +26,7 @@ class Anime {
     this.totalEpisodes,
     this.notificationDay,
     this.description,
+    this.notificationTime,
   });
 
   //Convenience getter english title is priority for displaying the title
@@ -46,6 +48,7 @@ class Anime {
       'totalEpisodes': totalEpisodes,
       'notificationDay': notificationDay,
       'description': description,
+      'notificationTime' : notificationTime,
     };
   }
 
@@ -65,6 +68,7 @@ class Anime {
       totalEpisodes: map['totalEpisodes'],
       notificationDay: map['notificationDay'],
       description: map['description'],
+      notificationTime: map['notificationTime'],
     );
   }
 }

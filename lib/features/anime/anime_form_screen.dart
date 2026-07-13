@@ -32,6 +32,7 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
   List<String> _selectedGenres = [];
   String? _titleError;
   List<String> _tempGenreSelection = [];
+  String? _notificationTime; // "HH:mm"
 
   static const List<String> _genreOptions = [
     'Action', 'Adventure', 'Boys Love', 'Cars', 'Comedy', 'Dementia',
@@ -76,6 +77,7 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
       _isFavorite = anime.isFavorite;
       _imagePath = anime.imagePath;
       _selectedGenres = List<String>.from(anime.genres);
+      _notificationTime = anime.notificationTime;
     }
   }
 
@@ -290,6 +292,36 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
   }
 }
 
+  Future<void> _pickNotificationTime() async {
+    final initial = _notificationTime != null
+        ? TimeOfDay(
+            hour: int.parse(_notificationTime!.split(':')[0]),
+            minute: int.parse(_notificationTime!.split(':')[1]),
+          )
+        : const TimeOfDay(hour: 8, minute: 0);
+
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _notificationTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  String get _notificationTimeDisplay {
+    if (_notificationTime == null) return '8:00 AM (default)';
+    final parts = _notificationTime!.split(':');
+    final hour = int.parse(parts[0]);
+    final minute = int.parse(parts[1]);
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+    return '$displayHour:${minute.toString().padLeft(2, '0')} $period';
+  }
+
   Future<void> _openDescriptionEditor() async {
     final controller = TextEditingController(text: _descriptionController.text);
     final result = await showModalBottomSheet<String>(
@@ -375,6 +407,7 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
       description: _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
+      notificationTime: _notificationDay != null ? _notificationTime : null,   // CHANGE 1: added this line
     );
 
     int animeId;
@@ -384,7 +417,6 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
       animeId = anime.id!;
 
       if (anime.type == AnimeType.series && anime.totalEpisodes != null) {
-        // If totalEpisodes increased, generate the newly added episode rows
         final existingEpisodes = await DatabaseHelper.instance.getEpisodesForAnime(anime.id!);
         final currentMax = existingEpisodes.isEmpty
             ? 0
@@ -397,7 +429,6 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
             );
           }
         } else if (anime.totalEpisodes! < currentMax) {
-          // Total went down — trim episodes above the new number
           final toRemove = existingEpisodes.where((e) => e.episodeNumber > anime.totalEpisodes!).toList();
           final hasDataToLose = toRemove.any((e) => e.isWatched || e.note != null);
 
@@ -435,7 +466,6 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
           }
         }
       } else if (anime.type == AnimeType.movie) {
-        // Movies get exactly one "episode" row to hold the note/watched state
         final existing = await DatabaseHelper.instance.getEpisodesForAnime(anime.id!);
         if (existing.isEmpty) {
           await DatabaseHelper.instance.insertEpisode(
@@ -462,16 +492,16 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
           animeId: animeId,
           animeTitle: anime.displayTitle,
           weekday: anime.notificationDay!,
+          time: anime.notificationTime,   // CHANGE 2: added this line
         );
       } else {
         await NotificationHelper.cancelReminder(animeId);
       }
     } catch (e) {
       debugPrint('Notification scheduling failed: $e');
-      // Don't let a notification failure block saving the anime
     }
 
-    if (mounted) Navigator.pop(context, true);
+    if (mounted) Navigator.pop(context, true);   // CHANGE 3: removed the two test notification lines above this
   }
 
   Widget _sectionCard({required String label, required IconData icon, required Widget child}) {
@@ -801,27 +831,48 @@ class _AnimeFormScreenState extends State<AnimeFormScreen> {
                       ),
                     ),
 
-                    GestureDetector(
-                      onTap: _openNotificationDayPicker,
-                      child: _sectionCard(
-                        label: 'NOTIFY ME ON',
-                        icon: Icons.notifications_outlined,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _notificationDay ?? 'Not set',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 13,
-                                color: _notificationDay != null ? _textPrimary : _textMuted,
+                    _sectionCard(
+                      label: 'NOTIFY ME ON',
+                      icon: Icons.notifications_outlined,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: _openNotificationDayPicker,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Day', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: _textMuted)),
+                                Text(
+                                  _notificationDay ?? 'Not set',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 13,
+                                    color: _notificationDay != null ? _textPrimary : _textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_notificationDay != null) ...[
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: _pickNotificationTime,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Time', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: _textMuted)),
+                                  Text(
+                                    _notificationTimeDisplay,
+                                    style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: _textPrimary),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
                     ),
-
                     GestureDetector(
                       onTap: _openDescriptionEditor,
                       child: _sectionCard(

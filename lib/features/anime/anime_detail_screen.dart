@@ -192,6 +192,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
       totalEpisodes: anime.totalEpisodes,
       notificationDay: anime.notificationDay,
       description: anime.description,
+      notificationTime: anime.notificationTime,   // ADD THIS LINE
     );
 
     await DatabaseHelper.instance.updateAnime(updated);
@@ -204,6 +205,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen> {
         animeId: anime.id!,
         animeTitle: anime.displayTitle,
         weekday: anime.notificationDay!,
+        time: anime.notificationTime,   // ADD THIS LINE
       );
     }
 

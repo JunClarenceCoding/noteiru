@@ -19,10 +19,11 @@ class DatabaseHelper {
         final path = join(await getDatabasesPath(), 'noteiru.db');
         return await openDatabase(
             path,
-            version: 1,
+            version: 2,
             onCreate: _onCreate,
+            onUpgrade: _onUpgrade,
             onConfigure: (db) async {
-                await db.execute('PRAGMA foreign_keys = ON');
+              await db.execute('PRAGMA foreign_keys = ON');
             },
         );
     }
@@ -55,6 +56,12 @@ class DatabaseHelper {
         FOREIGN KEY (animeId) REFERENCES animes (id) ON DELETE CASCADE
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE animes ADD COLUMN notificationTime TEXT');
+    }
   }
 
   // --------------------- ANIME CRUD ------------------------------
